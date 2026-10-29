@@ -1,0 +1,56 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "*/build.yaml"
+      - ".github/workflows/build.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build and push all apps
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=( */build.yaml )
+          [ ${#files[@]} -gt 0 ] || { echo "::error::no */build.yaml found"; exit 1; }
+          for f in "${files[@]}"; do
+            upstream=$(sed -n 's/^upstream: *//p' "$f")
+            tag=$(sed -n 's/^tag: *//p' "$f")
+            image=$(sed -n 's/^image: *//p' "$f")
+            registry=$(sed -n 's/^registry: *//p' "$f")
+            echo "::group::building ${image}:${tag}"
+            rm -rf build-context
+            mkdir -p build-context
+            if ! curl -fsSL "https://github.com/${upstream}/archive/refs/tags/${tag}.tar.gz" \
+              | tar -xz --strip-components=1 -C build-context; then
+              rm -rf build-context
+              mkdir -p build-context
+              curl -fsSL "https://github.com/${upstream}/archive/${tag}.tar.gz" \
+                | tar -xz --strip-components=1 -C build-context
+            fi
+            # Local overrides (e.g. a Dockerfile kept in the app dir) win over the
+            # upstream source tree; build.yaml itself is not used at build time.
+            ( cd "$(dirname "$f")" &&
+              for p in ./*; do
+                [ -f "$p" ] || continue
+                [ "$p" = "build.yaml" ] && continue
+                cp "$p" ../build-context/"$p"
+              done )
+            # GITHUB_TOKEN writes to ghcr.io automatically for this repo's packages
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login "$registry" -u pyrogeen --password-stdin
+            docker build -t "${registry}/${image}:${tag}" build-context
+            docker push "${registry}/${image}:${tag}"
+            echo "::endgroup::"
+          done

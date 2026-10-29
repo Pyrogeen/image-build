@@ -1,0 +1,4 @@
+upstream: RohanAnandPandit/trading212-mcp-server
+tag: 9276fcc
+image: image-build/t212-mcp
+registry: ghcr.io

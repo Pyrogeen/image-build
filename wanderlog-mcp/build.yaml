@@ -1,0 +1,4 @@
+upstream: shaikhspeare/wanderlog-mcp
+tag: e2abb53
+image: image-build/wanderlog-mcp
+registry: ghcr.io

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "dependencyDashboard": true,
+  "dependencyDashboardTitle": "Renovate Dashboard",
+  "assignees": [
+    "pyrogeen"
+  ],
+  "labels": [
+    "renovate"
+  ],
+  "prHourlyLimit": 0,
+  "branchConcurrentLimit": 50,
+  "prConcurrentLimit": 50,
+  "packageRules": [
+    {
+      "matchUpdateTypes": [
+        "patch"
+      ],
+      "matchCurrentVersion": "!/^0/",
+      "automerge": true
+    },
+    {
+      "matchPackageNames": [],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "automerge": true
+    }
+  ],
+  "customManagers": [
+    {
+      "description": "Upstream repo pins in */build.yaml — digest-tracks the upstream main-branch HEAD on the tag: line",
+      "fileMatch": ["^.*\\/build\\.yaml$"],
+      "matchStrings": [
+        "upstream: *(?<upstream>(?:github\\.com/)?(?<pkg>[0-9a-zA-Z-]+/[0-9a-zA-Z-]+))[\\r\\n]+tag: *(?<currentDigest>[0-9a-f]{7,40})"
+      ],
+      "datasource": "github-digest",
+      "depNameTemplate": "{{upstream}}",
+      "packageNameTemplate": "{{pkg}}",
+      "currentValueTemplate": "main",
+      "autoReplaceStringTemplate": "upstream: {{depName}}\ntag: {{newDigest}}"
+    }
+  ]
+}
