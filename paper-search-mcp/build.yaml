@@ -1,0 +1,4 @@
+upstream: openags/paper-search-mcp
+tag: cab1b5c
+image: pyrogeen/image-build/paper-search-mcp
+registry: ghcr.io
